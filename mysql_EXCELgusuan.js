@@ -14,7 +14,7 @@ mysql_irm_client.connect();
 
 
 
-var pos_date = "2016-12-22";   //这是执行时间 与文件的时间相吻合的话 更新fof的asset_official 否则就不用更新
+var pos_date = "2016-12-26";   //这是执行时间 与文件的时间相吻合的话 更新fof的asset_official 否则就不用更新
 //所有程序的输入文件都需要是单文件 不然容易出现异步的bug
 //该程序有疑问 未处理 !!!!!!!!
 var pickdata = function (filename) {
@@ -31,13 +31,13 @@ var pickName = function (filename) {
     var baseName = path.basename(filename);
    	var name = "";
     //此处针对需要每日进行估算的三个产品
-    if(baseName.substr(10,4) == "星联1号")
+    if(baseName.indexOf("星联1号") >= 0)
         name = "xinglian1hao";
-    else if(baseName.substr(10,4) == "星联2号")
+    else if(baseName.indexOf("星联2号") >= 0)
         name = "xinglian2hao";
-    else if(baseName.substr(18,4) == "星云1号")
+    else if(baseName.indexOf("星云1号") >= 0)
         name = "xingyun1hao";
-    else if(baseName.substr(10,4) == "金星三号")
+    else if(baseName.indexOf("金星三号") >= 0)
         name = "Jinxing3hao";
     return name;
 };
@@ -378,42 +378,61 @@ var sqlAction = function (filename) {
         //1. 还需要将Cash和Fund 也录进去
         //2. 更新里面所有产品的principle和size
         //3. 计算出估算净值 插入
+        var n = 'A';
+        var index = new Array(); //这是一个存储下标的字典
+        if(fund_of_fund != 'xingyun1hao')
+        {
+            while((n != 'Z')&&worksheet[n+5]&&worksheet[n+5].v)
+            {
+                index[worksheet[n + 5].v] = n;
+                n = String.fromCharCode(n.charCodeAt() + 1);
+            }
+        }
+        else
+        {
+            while((n != 'Z')&&worksheet[n+4]&&worksheet[n+4].v)
+            {
+                index[worksheet[n + 4].v] = n;
+                n = String.fromCharCode(n.charCodeAt() + 1);
+            }
+        }
+
+
         console.log("估算的日期是："+pos_date, "估值表日期是:" + file_date);
         for (var i = 0; i < 300; i++)
         {
-            var ai = worksheet['A' + i];//ai.v是acct_name中的key
-            var bi = worksheet['B' + i];
-            var li = worksheet['L' + i];//total_equity
-            var hi = worksheet['H' + i];//principle
-            var fi = worksheet['F' + i];//单位成本
-            var ei = worksheet['E' + i]; //quantity
-            var ji = worksheet['J' + i];
-            var di = worksheet['D' + i];
-            var ci = worksheet['C' + i];
-            var gi = worksheet['G' + i];
+            var ai = worksheet[index['科目代码'] + i];//seccode
+            var bi = worksheet[index['科目名称'] + i];
+            if(index['市值'] == undefined)
+                var li = worksheet[index['市值-本币'] + i];
+            else 
+                var li = worksheet[index['市值'] + i];            
+            if(index['成本'] == undefined)
+                var hi = worksheet[index['成本-本币'] + i];
+            else 
+                var hi = worksheet[index['成本'] + i];
+            var fi = worksheet[index['单位成本'] + i];//cost_asset
 
-            if((ai&&li&&hi&&ei&&di&&ai.v&&ai.v.substr(0, 11) == '1108.02.01.') || (ai&&di&&di.v&&(ai.v.substr(0, 8) =='11090101'||ai.v.substr(0, 8) =='11090601')))
+            var ei = worksheet[index['数量'] + i]; //cost
+            if(index['市价'] == undefined)
+                var ji = worksheet[index['行情'] + i];
+            else
+                var ji = worksheet[index['市价'] + i];
+
+
+            if((ai&&li&&hi&&ei&&ai.v.toString()&&ai.v.toString().substr(0, 11) == '1108.02.01.') || (ai&&li&&hi&&ei&&(ai.v.toString().substr(0, 8) =='11090101'||ai.v.toString().substr(0, 8) =='11090601')))
             { 
                 Product_Num++; //记录估值表中的产品数量 用来和Database_Product_Num中的比较 看有没有申购赎回
-                if(fund_of_fund == 'xinglian1hao' || fund_of_fund == 'xinglian2hao'|| fund_of_fund == 'Jinxing3hao')
-                {
-                    var account_id = acct_name[ai.v];
-                    var asset_official = ji.v;
-                    var total_equity = li.v;
-                    var principal = hi.v;
-                    var cost_price = fi.v;
-                    var quantity = ei.v;
-                }
-                else if(fund_of_fund == 'xingyun1hao')
-                {
-                    var account_id = acct_name[ai.v];
-                    var asset_official = gi.v;
-                    var total_equity = hi.v;
-                    var principal = ei.v;
-                    var cost_price = di.v;
-                    var quantity = ci.v;                
-                }
+                var account_id = acct_name[ai.v.toString()];
+                var asset_official = ji.v;
+                var total_equity = li.v;
+                var principal = hi.v;
+                var cost_price = fi.v;
+                var quantity = ei.v;
+
                 console.log(account_id, acct_asset[account_id]*principal/cost_price);
+                if(account_id == 'xingyunCqi')
+                    continue;
                 sum += acct_asset[account_id]*principal/cost_price;
                 // console.log("line:415 ～" + account_id, acct_asset[account_id]);
                 //console.log(sum);
@@ -423,34 +442,19 @@ var sqlAction = function (filename) {
             } // end if
 
             //3003是证券清算款    1031是保证金    
-            else if(ai&&(ai.v == '1002'||ai.v == '1202'))
+            else if(ai&&(ai.v.toString() == '1002'||ai.v.toString() == '1202'))
             { //此处是针对现金进行处理的 需要for循环的外面才能搞定
-                if(fund_of_fund == 'xinglian1hao' ||fund_of_fund == 'xinglian2hao'|| fund_of_fund == 'Jinxing3hao')
-                {
-                    //console.log("line: 303 " + sum , li.v);
-                    sum += li.v; //这里是 将所有金钱的总数放到一起
-                    fof_Cash += li.v;  //这里是为了将所有的现金放到一起
-                }
-                else
-                {
-                    sum += hi.v; //这里是 将所有金钱的总数放到一起
-                    fof_Cash += hi.v;  //这里是为了将所有的现金放到一起                   
-                }
+                //console.log("line: 303 " + sum , li.v);
+                sum += li.v; //这里是 将所有金钱的总数放到一起
+                fof_Cash += li.v;  //这里是为了将所有的现金放到一起
+
             }
-            else if(ai&&ai.v == '1031')
+            else if(ai&&ai.v.toString() == '1031')
             {
                 //Margin就一个 所以可以for循环里面搞定  录进去
                 var account_id = fund_of_fund + "_margin";
-                if(fund_of_fund == 'xinglian1hao' ||fund_of_fund == 'xinglian2hao'|| fund_of_fund == 'Jinxing3hao')
-                {
-                    fof_Margin = li.v;
-                    sum += li.v
-                }
-                else
-                {
-                    fof_Margin = hi.v;
-                    sum += hi.v                    
-                }
+                fof_Margin = li.v;
+                sum += li.v;
                 margin_flag = 1;
                 if(pos_date == file_date){
                     //在文件日期等于估算日期的时候 我们需要将fof_Margin更新
@@ -460,53 +464,36 @@ var sqlAction = function (filename) {
                 //     insertFunction(pos_date, account_id, 0, fof_Margin, fund_of_fund, 0, 0, 0, 1, 3);
                //看到此处了 也就是 插入保证金这块已经写完了
             }
-            else if(ai&&(ai.v == '3003'||ai.v == '1021'))
+            else if(ai&&(ai.v.toString() == '3003'||ai.v.toString() == '1021'))
             {
                 //证券清算款 算到others中
                 var account_id = fund_of_fund + "_others";
-                if(fund_of_fund == 'xinglian1hao' ||fund_of_fund == 'xinglian2hao'|| fund_of_fund == 'Jinxing3hao')
-                {
-                    console.log("line : 322 " + sum, li.v);
-                    fof_Others = li.v;
-                    sum += li.v
-                }
-                else
-                {
-                    fof_Others = hi.v;
-                    sum += hi.v                    
-                }
+                console.log("line : 471 " + sum, li.v);
+                fof_Others = li.v;
+                sum += li.v
                 others_flag = 1;
                 if(pos_date == file_date)
                     insertFunction(pos_date, account_id, 0, fof_Others, fund_of_fund, 0, 0, 0, 1, 5);
                 // else  
                 //     insertFunction(pos_date, account_id, 0, fof_Others, fund_of_fund, 0, 0, 0, 1, 5);
             }            
-            else if(ai&&(ai.v == '2206'||ai.v == '2207'||ai.v == '2203'||ai.v == '2211'))
+            else if(ai&&(ai.v.toString() == '2206'||ai.v.toString() == '2207'||ai.v.toString() == '2203'||ai.v.toString() == '2211'))
             {
                 fof_Debt += hi.v;
             }
-            else if(ai&&ai.v == '1105')
+            else if(ai&&ai.v.toString() == '1105')
             {  //Fund就一个 所以可以for循环里面搞定  录进去
                 var account_id = fund_of_fund + "_etf";
-                if(fund_of_fund == 'xinglian1hao' ||fund_of_fund == 'xinglian2hao'|| fund_of_fund == 'Jinxing3hao')
-                {
-                    console.log("line : 322 " + sum, li.v);
-                    fof_Etf = li.v;
-                    sum += li.v
-                }
-                else
-                {
-                    fof_Etf = hi.v;
-                    sum += hi.v                    
-                }
+                console.log("line : 487 " + sum, li.v);
+                fof_Etf = li.v;
+                sum += li.v
                 etf_flag = 1;
                 if(pos_date == file_date)
                     insertFunction(pos_date, account_id, 0, fof_Etf, fund_of_fund, 0, 0, 0, 1, 2);
                 // else  
                 //     insertFunction(pos_date, account_id, 0, fof_Etf, fund_of_fund, 0, 0, 0, 1, 2);
             }  
-
-            else if(ai && ai.v == '单位净值'){
+            else if(ai && ai.v.toString() == '单位净值'){
                 if(pos_date == file_date)
                     fof_asset_official = bi.v;
                 else
@@ -516,38 +503,34 @@ var sqlAction = function (filename) {
                 }
                 continue;
             }
-            else if(ai && ai.v == '资产净值'){
+            else if(ai && ai.v.toString() == '资产净值'){
                 fof_total_equity = li.v;
                 continue;
             }
-            else if(ai && ai.v == '资产合计'){
+            else if(ai && ai.v.toString() == '资产合计'){
                 fof_principal = hi.v;
                 continue;
             }
-            else if(ai && ai.v == '实收资本'){
+            else if(ai && ai.v.toString() == '实收资本'){
                 fof_size = ei.v;
                 continue;
             }
-            else if(fund_of_fund == 'xingyun1hao'&&ai && ai.v == '实收资本'){
-                fof_size = ei.v;
-                continue;
-            }
-            else if(ai && ai.v == '基金单位净值：')
+            else if(ai && ai.v.toString() == '基金单位净值：')
             {
                 if(pos_date == file_date)
-                    fof_asset_official = hi.v;
+                    fof_asset_official = bi.v;
                 else
                     fof_asset_official = '';
                 continue;
             }
-            else if(ai && ai.v == '基金资产净值:')
+            else if(ai && ai.v.toString() == '基金资产净值:')
             {
-                fof_total_equity = hi.v;
+                fof_total_equity = li.v;
                 continue;           
             }
-            else if(ai && ai.v == '资产类合计:')
+            else if(ai && ai.v.toString() == '资产类合计:')
             {
-                fof_principal = ei.v;
+                fof_principal = hi.v;
                 continue;           
             }
             else

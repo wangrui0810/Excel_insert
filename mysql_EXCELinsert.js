@@ -24,17 +24,17 @@ var pickName = function (filename) {
     var baseName = path.basename(filename);
    	var name = "";
    //此处还没有将星云1号写进来 因为星云1号的文件名字和格式不同
-    if(baseName.substr(10,4) == "九尾1号")
+    if(baseName.indexOf("九尾1号") >= 0)
     	name = "Jiuwei1hao";
-    if(baseName.substr(10,4) == "星海3号")
+    else if(baseName.indexOf("星海3号") >= 0)
         name = "Xinghai3hao";
-    else if(baseName.substr(10,4) == "金星三号")
+    else if(baseName.indexOf("金星三号") >= 0)
         name = "Jinxing3hao";
-    else if(baseName.substr(10,4) == "星联1号")
+    else if(baseName.indexOf("星联1号") >= 0)
         name = "xinglian1hao";
-    else if(baseName.substr(10,4) == "星联2号")
+    else if(baseName.indexOf("星联2号") >= 0)
         name = "xinglian2hao";
-    else if(baseName.substr(18,4) == "星云1号")
+    else if(baseName.indexOf("星云1号") >= 0)
         name = "xingyun1hao";
     return name;
 };
@@ -90,8 +90,14 @@ var acct_name = {
     '1108.02.01.SN0784 OTC':'LianhaiDuich',
     '1108.02.01.1XYXC1 OTC':'Xingchen1hao',
     '1108.02.01.SN2682 OTC':'Xingyou1hao',
-    '1108.02.01.SM9462 OTC':'Xingying8hao'
+    '1108.02.01.SM9462 OTC':'Xingying8hao',
+    '1108.02.01.SN4214 OTC':'Xingying14hao',
+    '1108.02.01.SN4215 OTC':'Xingying15hao',
+    '1108.02.01.SN4216 OTC':'Xingying16hao',
+    '1108.02.01.SN4217 OTC':'Xingying17hao'
 };
+
+
 
 var sqlActionInner = function (workbook, filename, callback, num) {
     var seccode, date, total_equity, asset_official;
@@ -119,24 +125,42 @@ var sqlActionInner = function (workbook, filename, callback, num) {
         pos_date = pickdata2(filename);
     else
         pos_date = pickdata(filename);
+
+    var n = 'A';
+    var index = new Array(); //这是一个存储下标的字典
+    while((n != 'Z')&&worksheet[n+5]&&worksheet[n+5].v)
+    {
+        index[worksheet[n + 5].v] = n;
+        n = String.fromCharCode(n.charCodeAt() + 1);
+    }
+
     for (var i = 5; i < 300; i++)
     {
-        var ai = worksheet['A' + i];//ai.v是acct_name中的key
-        var bi = worksheet['B' + i];
-        var ji = worksheet['J' + i];//asset
-        var li = worksheet['L' + i];//asset
-        var hi = worksheet['H' + i];//asset
-        var fi = worksheet['F' + i];
-        var ei = worksheet['E' + i];
-        var di = worksheet['D' + i];
-        var gi = worksheet['G' + i];
-        var ci = worksheet['C' + i];
-        if((ai&&li&&hi&&ei&&di&&ai.v&&ai.v.substr(0, 11) == '1108.02.01.') || (ai&&di&&di.v&&ai.v.substr(0, 8) =='11090101'))
+        var ai = worksheet[index['科目代码'] + i];//seccode
+        var bi = worksheet[index['科目名称'] + i];
+        if(index['市价'] == undefined)
+            var ji = worksheet[index['行情'] + i];
+        else
+            var ji = worksheet[index['市价'] + i];
+        if(index['市值'] == undefined)
+            var li = worksheet[index['市值-本币'] + i];
+        else 
+            var li = worksheet[index['市值'] + i];
+        if(index['成本'] == undefined)
+            var hi = worksheet[index['成本-本币'] + i];
+        else 
+            var hi = worksheet[index['成本'] + i];
+
+        var ki = worksheet[index['市值-原币'] + i];
+        var fi = worksheet[index['单位成本'] + i];//cost_asset
+        var ei = worksheet[index['数量'] + i]; //cost
+        var gi = worksheet[index['成本-原币'] + i]; //price
+        if((ai&&li&&hi&&ei&&ai.v.toString()&&ai.v.toString().substr(0, 11) == '1108.02.01.') || (ai&&ai.v.toString().substr(0, 8) =='11090101'))
         {
             ProductNum++;   //这个数是 估值表中这个 fof产品有多少个子基金  
             if(fund_of_fund == 'Jiuwei1hao' || fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao')
             {
-                var account_id = acct_name[ai.v];
+                var account_id = acct_name[ai.v.toString()];
                 var asset_official = ji.v;
                 var total_equity = li.v;
                 var principal = hi.v;
@@ -145,12 +169,12 @@ var sqlActionInner = function (workbook, filename, callback, num) {
             }
             else if(fund_of_fund == 'xingyun1hao')
             {
-                var account_id = acct_name[ai.v];
-                var asset_official = gi.v;
-                var total_equity = hi.v;
-                var principal = ei.v;
-                var cost_price = di.v;
-                var quantity = ci.v;                
+                var account_id = acct_name[ai.v.toString()];
+                var asset_official = ji.v;
+                var total_equity = li.v;
+                var principal = hi.v;
+                var cost_price = fi.v;
+                var quantity = ei.v;                
             }
             if(!account_id)
             {
@@ -183,7 +207,7 @@ var sqlActionInner = function (workbook, filename, callback, num) {
                 });
             })();
         }  //end if
-        else if(ai&&(ai.v == '1002'))
+        else if(ai&&(ai.v.toString() == '1002'))
         { //此处是针对现金进行处理的 需要for循环的外面才能搞定
             if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao')
             {
@@ -197,7 +221,7 @@ var sqlActionInner = function (workbook, filename, callback, num) {
             }
             callback(pos_date, fof_cash, 0, fof_Cash, fund_of_fund, 0, 0, 0, 1, 4);
         }
-        else if(ai&&(ai.v == '1021'||ai.v == '3003'))
+        else if(ai&&(ai.v.toString() == '1021'||ai.v.toString() == '3003'))
         { //此处是针对现金进行处理的 需要for循环的外面才能搞定
             if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao')
             {
@@ -212,7 +236,7 @@ var sqlActionInner = function (workbook, filename, callback, num) {
             others_flag = 1;
            // pos_date, account_id, total_equity, principal, fund_of_fund, asset_official, asset_official, quantity, cost_price, asset_type
         }
-        else if(ai&&ai.v == '1031')
+        else if(ai&&ai.v.toString() == '1031')
         {  //Margin就一个 所以可以for循环里面搞定
             var account_id = fund_of_fund + "_margin";
             if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao')
@@ -225,7 +249,7 @@ var sqlActionInner = function (workbook, filename, callback, num) {
            // pos_date, account_id, total_equity, principal, fund_of_fund, asset_official, asset_official, quantity, cost_price, asset_type
             callback(pos_date, fof_margin, 0, fof_Margin, fund_of_fund, 0, 0, 0, 1, 3);
         } 
-        else if(ai&&ai.v == '1105')
+        else if(ai&&ai.v.toString() == '1105')
         {  //Etf就一个 所以可以for循环里面搞定
             var account_id = fund_of_fund + "_etf";
             if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao')
@@ -237,39 +261,39 @@ var sqlActionInner = function (workbook, filename, callback, num) {
             etf_flag = 1;
             callback(pos_date, fof_etf, 0, fof_Etf, fund_of_fund, 0, 0, 0, 1, 2);
         }      
-        else if(ai && ai.v == '单位净值'){
+        else if(ai && ai.v.toString() == '单位净值'){
             fof_asset_official = bi.v;
             continue;
         }
-        else if(ai && ai.v == '资产净值'){
+        else if(ai && ai.v.toString() == '资产净值'){
             fof_total_equity = li.v;
             continue;
         }
-        else if(ai && ai.v == '资产合计'){
+        else if(ai && ai.v.toString() == '资产合计'){
             fof_principal = hi.v;
             continue;
         }
-        else if(fund_of_fund == 'xingyun1hao'&&ai && ai.v == '实收资本')
+        else if(fund_of_fund == 'xingyun1hao'&&ai && ai.v.toString() == '实收资本')
         {
             fof_size = ei.v;
             continue;
         }
-        else if(ai && ai.v == '基金单位净值：')
+        else if(ai && ai.v.toString() == '基金单位净值：')
         {
             fof_asset_official = hi.v;
             continue;
         }
-        else if(ai && ai.v == '基金资产净值:')
+        else if(ai && ai.v.toString() == '基金资产净值:')
         {
             fof_total_equity = hi.v;
             continue;           
         }
-        else if(ai && ai.v == '资产类合计:')
+        else if(ai && ai.v.toString() == '资产类合计:')
         {
             fof_principal = ei.v;
             continue;           
         }
-        else if(ai && ai.v == '实收资本')
+        else if(ai && ai.v.toString() == '实收资本')
         {
             fof_size = hi.v;
             continue;           
