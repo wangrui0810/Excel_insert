@@ -259,6 +259,10 @@ var getPattern3 = function(workbook, filename, account_id, callback, callback2){
         {
             asset_official = ci.v;
         }
+        else if(bi&&(bi.v =='累计单位净值：') )
+        {
+            asset_official = ci.v;
+        }
         else if(bi&&(bi.v == '基金资产净值:'))
         {
             total_market_value = ii.v;
