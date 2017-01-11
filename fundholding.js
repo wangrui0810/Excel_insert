@@ -6,7 +6,7 @@ var getPattern2 = require('./pattern2.js');
 var getPattern3 = require('./pattern3.js');
 
 var mysql = require('mysql');
-var mysql_irm_client = mysql.createConnection(config.dbPath);
+var mysql_irm_client = mysql.createConnection(config.test_dbPath);
 mysql_irm_client.connect(function(err) {
   if (err) {
     console.error('error connecting: ' + err.stack);
@@ -29,13 +29,13 @@ var pattern1 = ['HuaxiaRY','XinghaiM','Zhongxing1hao','Zhongxing2hao','Fengjing3
                 'Jiuwei1hao','Jiukun','Aiye','Shengshi','Liangdao','Zundao','Kanzhan','LianhaiDuich',
                 'Kanzhan','Panda1hao','LinjieKaili','Bird1hao','JiuweiHaoen','Jiuwei3hao','Xingyou1hao',
                 'JiuweiC','JiuweiD','Xiaoqiang','JiuweiE','JiuweiB','Meifeng2A','Xingying1hao', 'Xingying2hao','Xingying4hao',
-                'Xingying8hao','Xingying14hao','Xingying15hao','Xingying16hao','Xingying17hao','Tianwangxing',
-                'xingyunYanf','xingyunJial','Xingmei4hao','xingyunLightH', 'Huaxia2hao'];
+                'Xingying8hao','Xingying14hao','Xingying15hao','Xingying16hao','Xingying17hao','Tianwangxing','Haiwangxing',
+                'xingyunYanf','xingyunJial','Xingmei4hao','xingyunLightH', 'Huaxia2hao','Jinxing3hao', 'LianghuaJingx', 'Youshi6qi'];
 for(var i = 0; i < pattern1.length; ++i)
 {
     flag[pattern1[i]] = 1;
 }
-var pattern2 = ['xingyunCqi','LianhaiDingz'];
+var pattern2 = ['xingyunCqi','LianhaiDingz', 'Xingying6hao', 'Xingying7hao'];
 for(var i = 0; i < pattern2.length; ++i)
 {
     flag[pattern2[i]] = 2;
@@ -68,7 +68,7 @@ var sqlAction = function (filename, account_id) {
                                     console.log(err);
                                     throw err;
                                 }  
-                                console.log("插入Fundholding" +a, b, c);
+                                // console.log("插入Fundholding" +a, b, c);
                                 // console.log(result);
                             }); 
 
@@ -80,7 +80,7 @@ var sqlAction = function (filename, account_id) {
                                     console.log(err);
                                     throw err;
                                 }  
-                                console.log("插入Fundholding" +a, b, c);
+                                // console.log("插入Fundholding" +a, b, c);
                                 // console.log(result);
                             }); 
             }
@@ -141,7 +141,7 @@ var sqlAction = function (filename, account_id) {
                                     throw err;
                                 }  
                                 // console.log("插入Nvdata" +a, b);
-                                console.log(result);
+                                // console.log(result);
                             }); 
             }
             else
@@ -154,7 +154,7 @@ var sqlAction = function (filename, account_id) {
                                 throw err;
                             }  
                             // console.log("更新Nvdata" +a, b);
-                            console.log(result);
+                            // console.log(result);
                         }); 
             }
         }

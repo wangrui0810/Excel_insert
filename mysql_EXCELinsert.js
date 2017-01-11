@@ -36,6 +36,8 @@ var pickName = function (filename) {
         name = "xinglian2hao";
     else if(baseName.indexOf("星云1号") >= 0)
         name = "xingyun1hao";
+    else if(baseName.indexOf("星优一号") >= 0)
+        name = "Xingyou1hao";
     return name;
 };
 var readWorkbook_ = function (filename) {
@@ -94,7 +96,11 @@ var acct_name = {
     '1108.02.01.SN4214 OTC':'Xingying14hao',
     '1108.02.01.SN4215 OTC':'Xingying15hao',
     '1108.02.01.SN4216 OTC':'Xingying16hao',
-    '1108.02.01.SN4217 OTC':'Xingying17hao'
+    '1108.02.01.SN4217 OTC':'Xingying17hao',
+    '1108.02.01.SH0267 OTC':'ZhongxingSon2',
+    '1108.02.01.SH0269 OTC':'ZhongxingSon4',
+    '1108.02.01.SH0271 OTC':'ZhongxingSon6',
+    '1108.02.01.SH0273 OTC':'ZhongxingSon7'
 };
 
 
@@ -158,7 +164,7 @@ var sqlActionInner = function (workbook, filename, callback, num) {
         if((ai&&li&&hi&&ei&&ai.v.toString()&&ai.v.toString().substr(0, 11) == '1108.02.01.') || (ai&&ai.v.toString().substr(0, 8) =='11090101'))
         {
             ProductNum++;   //这个数是 估值表中这个 fof产品有多少个子基金  
-            if(fund_of_fund == 'Jiuwei1hao' || fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao')
+            if(fund_of_fund == 'Jiuwei1hao' || fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao'||fund_of_fund == 'Xingyou1hao')
             {
                 var account_id = acct_name[ai.v.toString()];
                 var asset_official = ji.v;
@@ -167,7 +173,7 @@ var sqlActionInner = function (workbook, filename, callback, num) {
                 var cost_price = fi.v;
                 var quantity = ei.v;
             }
-            else if(fund_of_fund == 'xingyun1hao')
+            if(fund_of_fund == 'xingyun1hao')
             {
                 var account_id = acct_name[ai.v.toString()];
                 var asset_official = ji.v;
@@ -209,7 +215,7 @@ var sqlActionInner = function (workbook, filename, callback, num) {
         }  //end if
         else if(ai&&(ai.v.toString() == '1002'))
         { //此处是针对现金进行处理的 需要for循环的外面才能搞定
-            if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao')
+            if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao'||fund_of_fund == 'Xingyou1hao')
             {
                 var account_id = fund_of_fund + "_cash";
                 fof_Cash = li.v;
@@ -222,8 +228,8 @@ var sqlActionInner = function (workbook, filename, callback, num) {
             callback(pos_date, fof_cash, 0, fof_Cash, fund_of_fund, 0, 0, 0, 1, 4);
         }
         else if(ai&&(ai.v.toString() == '1021'||ai.v.toString() == '3003'))
-        { //此处是针对现金进行处理的 需要for循环的外面才能搞定
-            if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao')
+        { //此处是针对其他进行处理的 需要for循环的外面才能搞定
+            if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao'||fund_of_fund == 'Xingyou1hao')
             {
                 var account_id = fund_of_fund + "_others";
                 fof_Others += li.v;
@@ -239,7 +245,7 @@ var sqlActionInner = function (workbook, filename, callback, num) {
         else if(ai&&ai.v.toString() == '1031')
         {  //Margin就一个 所以可以for循环里面搞定
             var account_id = fund_of_fund + "_margin";
-            if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao')
+            if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao'||fund_of_fund == 'Xingyou1hao')
             {
                 fof_Margin = li.v;               
             }
@@ -249,17 +255,16 @@ var sqlActionInner = function (workbook, filename, callback, num) {
            // pos_date, account_id, total_equity, principal, fund_of_fund, asset_official, asset_official, quantity, cost_price, asset_type
             callback(pos_date, fof_margin, 0, fof_Margin, fund_of_fund, 0, 0, 0, 1, 3);
         } 
-        else if(ai&&ai.v.toString() == '1105')
+        else if(ai&&(ai.v.toString() == '1105'||ai.v.toString() == '1202'))
         {  //Etf就一个 所以可以for循环里面搞定
             var account_id = fund_of_fund + "_etf";
-            if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao')
+            if(fund_of_fund == 'Jiuwei1hao' ||fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao'||fund_of_fund == 'Xingyou1hao')
             {
-                fof_Etf = li.v;               
+                fof_Etf += li.v;               
             }
             else if(fund_of_fund == 'xingyun1hao')
-                fof_Etf = hi.v;
+                fof_Etf += hi.v;
             etf_flag = 1;
-            callback(pos_date, fof_etf, 0, fof_Etf, fund_of_fund, 0, 0, 0, 1, 2);
         }      
         else if(ai && ai.v.toString() == '单位净值'){
             fof_asset_official = bi.v;
@@ -325,6 +330,10 @@ var sqlActionInner = function (workbook, filename, callback, num) {
     {
         //fof基金的others持仓经过for循环之后 获取到了
         callback(pos_date, fof_others, 0, fof_Others, fund_of_fund, 0, 0, 0, 1, 5);
+    }
+    if(etf_flag == 1)
+    {
+        callback(pos_date, fof_etf, 0, fof_Etf, fund_of_fund, 0, 0, 0, 1, 2);
     }
 };
 

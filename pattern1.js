@@ -17,8 +17,8 @@ var pickdate = function (filename) {
 //                 'Jiuwei1hao','Jiukun','Aiye','Shengshi','Liangdao','Zundao','Kanzhan','LianhaiDuich',
 //                 'Kanzhan','Panda1hao',    'LinjieKaili','Bird1hao','JiuweiHaoen','Jiuwei3hao','Xingyou1hao',
 //                 'JiuweiC','JiuweiD','Xiaoqiang','JiuweiE','JiuweiB','Meifeng2A','Xingying4hao',
-//                 'Xingying8hao','Xingying14hao','Xingying15hao','Xingying16hao','Xingying17hao',
-//                 'xingyunYanf','xingyunJial','Xingmei4hao','xingyunLightH', 'Huaxia2hao', 'Xingying2hao'];
+//                 'Xingying8hao','Xingying14hao','Xingying15hao','Xingying16hao','Xingying17hao','Tianwangxing', 'Haiwangxing',
+//                 'xingyunYanf','xingyunJial','Xingmei4hao','xingyunLightH', 'Huaxia2hao', 'Xingying2hao', 'Jinxing3hao'];
 
 var getPattern1 = function(workbook, filename, account_id, callback, callback2){
     var pos_date, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value;
@@ -47,7 +47,10 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
         var bi = worksheet[index['科目名称'] + i];
         var gi = worksheet[index['成本-原币'] + i]; //price
         var ei = worksheet[index['数量'] + i]; //cost
-        var hi = worksheet[index['成本-本币'] + i];//market
+        if(index['成本'] == undefined)
+            var hi = worksheet[index['成本-本币'] + i];//market
+        else
+            var hi = worksheet[index['成本'] + i];//market
         var ki = worksheet[index['市值-原币'] + i];
         var fi = worksheet[index['单位成本'] + i];//cost_asset
         if(index['市价'] == undefined)
@@ -58,13 +61,17 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
             var li = worksheet[index['市值-本币'] + i];
         else 
             var li = worksheet[index['市值'] + i];
-        // if(bi&&bi.v)
-        //     console.log(bi.v +"   "+ typeof(bi.v));
-        // continue;
+        //海王星的估值表格式有点问题
+        if(account_id == 'Haiwangxing')
+        {
+            li = worksheet['L' + i];
+            hi = worksheet['H' + i];
+        }
+
         if(ai&&bi&&hi&&ei&&ji&&li&&fi&&(ai.v.toString().substr(0, 4) == '1102')) //done
         { 
           //pos_date, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value
-            if(ei.v == ' '||ji.v == ' '||li.v == ' ')
+            if(ei.v == ' '||ji.v == ' '||li.v == ' '||fi.v == ' '||ei.v == ''||ji.v == ''||li.v =='')
                 continue;
             security_id = ai.v.toString().substr(11, 6);
             security_name = bi.v;
@@ -78,12 +85,12 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
                 long_value += Number(market_value);
             else
                 short_value += Number(market_value);
-            //console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
+            // console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
             callback(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
         }
         else if(ai&&bi&&ei&&ji&&li&&(ai.v.toString().substr(0, 4) == '1105'))//done
         {
-            if(ei.v == ' '||ji.v == ' '||li.v == ' ')
+            if(ei.v == ' '||ji.v == ' '||li.v == ' '||fi.v == ' '||ei.v == ''||ji.v == ''||li.v =='')
                 continue;
             security_id = ai.v.toString().substr(11, 6);
             security_name = bi.v;
@@ -106,7 +113,6 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
             }
             //console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
             callback(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
-
         }
         else if(ai&&ai.v.toString() == '1031')//done
         {
@@ -159,7 +165,8 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
         else if(ai&&bi&&hi&&ei&&ji&&li&&fi&&(ai.v.toString().substr(0, 4) == '3102')) //done
         //股指期货  商品期货 债券期货 期权 这四种类型全在里面
         {
-            if(ei.v == ' '||ji.v == ' '||li.v == ' ')
+            // //console.log(ai.v, '!!!'+ei.v+'!!!', typeof(fi.v));
+            if(ei.v == ' '||ji.v == ' '||li.v == ' '||fi.v == ' '||ei.v == ''||ji.v == ''||li.v =='')
                 continue;
             if((ai.v.toString().substr(0,7) == '3102.01')||(ai.v.toString().substr(0,7) == '3102.03')) //||(ai.v.toString().substr(0,7) == '3102.02')
             {   //股指期货
@@ -235,15 +242,16 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
             }
             else
             {
-                console.log(pos_date,account_id+'!!!!!!!!!!!!!!!!!!!!!!!估值表中有3102 没有处理过的情况');
-                return ;
+                //console.log(ai.v, bi.v, typeof(fi.v));
+                //console.log(pos_date,account_id+'!!!!!!!!!!!!!!!!!!!!!!!估值表中有3102 没有处理过的情况', bi.v);
+                continue;
             }
         }
         else if(ai&&bi&&hi&&ei&&ji&&li&&fi&&ai.v.toString().substr(0, 4)=='1103')//done
         {
             //债券
             //如果
-            if(ei.v == ' '||ji.v == ' '||li.v == ' ')
+            if(ei.v == ' '||ji.v == ' '||li.v == ' '||fi.v == ' '||ei.v == ''||ji.v == ''||li.v =='')
                 continue;
             security_id = ai.v.toString().substr(11, 6)+'.'+ai.v.toString().substr(ai.v.toString().length-2, 2);
             security_name = bi.v;
@@ -257,7 +265,7 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
                 long_value += Number(market_value);
             else
                 short_value += Number(market_value);
-            // console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
+            //console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
             callback(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
         }
         else if(ai&&(ai.v.toString().length == 20)&&ai.v.toString().substr(0, 7)=='1204.10') //done
@@ -274,7 +282,7 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
             //console.log('line198:'+pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
             callback(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
         }
-        else if(ai&&ai.v.toString() == '1002')
+        else if(ai&&hi&&ai.v.toString() == '1002')
         {
             security_id = account_id + '_cash';
             security_name = '现金';
@@ -289,7 +297,7 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
         }
         else if(ai&&ai.v.toString() == '1109'||(ai&&bi&&fi&&ei&&ji&&li&&(ai.v.toString().substr(0, 4) == '1108')))
         {
-            if(ei.v == ' '||ji.v == ' '||li.v == ' ')
+            if(ei.v == ' '||ji.v == ' '||li.v == ' '||fi.v == ' '||ei.v == ''||ji.v == ''||li.v =='')
                 continue;
             security_id = ai.v.toString().substr(11, 6);
             security_name = bi.v;
@@ -304,13 +312,18 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
         }
         else if(ai&&ai.v.toString() == '资产净值')
         {
-            total_market_value = li.v;
+            if(li)
+                total_market_value = li.v;
         }
         else if(ai&&ai.v.toString() == '实收资本')
         {
             total_cost_value = ei.v;
         }
         else if(ai&&ai.v.toString() == '单位净值')
+        {
+            asset_official = bi.v;
+        }
+        else if(ai&&ai.v.toString() == '今日单位净值')
         {
             asset_official = bi.v;
         }

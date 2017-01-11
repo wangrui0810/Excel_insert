@@ -14,7 +14,7 @@ mysql_irm_client.connect();
 
 
 
-var pos_date = "2016-12-27";   //这是执行时间 与文件的时间相吻合的话 更新fof的asset_official 否则就不用更新
+var pos_date = "2017-01-10";   //这是执行时间 与文件的时间相吻合的话 更新fof的asset_official 否则就不用更新
 //所有程序的输入文件都需要是单文件 不然容易出现异步的bug
 //该程序有疑问 未处理 !!!!!!!!
 var pickdata = function (filename) {
@@ -94,7 +94,8 @@ var acct_name = {
     '11090101S81686':'xingyunJial',
     '11090101SK3893':'xingyunLightH',
     '1108.02.01.1XM4H1 OTC':'Xingmei4hao',
-    '1108.02.01.SK3893 OTC':'xingyunLightH'
+    '1108.02.01.SK3893 OTC':'xingyunLightH',
+    '1108.02.01.SR3252 OTC':'LianghuaJingx'
 };
 
 var isExistFoFholding  = function(a, b, c, d, e, f, g, h, i, j)
@@ -442,7 +443,7 @@ var sqlAction = function (filename) {
             } // end if
 
             //3003是证券清算款    1031是保证金    
-            else if(ai&&(ai.v.toString() == '1002'||ai.v.toString() == '1202'))
+            else if(ai&&(ai.v.toString() == '1002'))
             { //此处是针对现金进行处理的 需要for循环的外面才能搞定
                 //console.log("line: 303 " + sum , li.v);
                 sum += li.v; //这里是 将所有金钱的总数放到一起
@@ -481,7 +482,7 @@ var sqlAction = function (filename) {
             {
                 fof_Debt += hi.v;
             }
-            else if(ai&&ai.v.toString() == '1105')
+            else if(ai&&(ai.v.toString() == '1105'||ai.v.toString() == '1202'))
             {  //Fund就一个 所以可以for循环里面搞定  录进去
                 var account_id = fund_of_fund + "_etf";
                 console.log("line : 487 " + sum, li.v);
