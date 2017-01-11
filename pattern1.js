@@ -36,11 +36,13 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
     //现在需要确定判断出 ‘成本’ ‘数量’等对应的下标  存在一个dict中
     var n = 'A';
     var index = new Array(); //这是一个存储下标的字典
-    while((n != 'Z')&&worksheet[n+5]&&worksheet[n+5].v)
+    while((n != 'Z'))
     {
-        index[worksheet[n + 5].v] = n;
+        if(worksheet[n+5]&&worksheet[n+5].v)
+            index[worksheet[n + 5].v] = n;
         n = String.fromCharCode(n.charCodeAt() + 1);
     }
+
     for (var i = 5; i < 1000; i++) 
     {
         var ai = worksheet[index['科目代码'] + i];//seccode
@@ -292,10 +294,10 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
             quantity = '';
             market_price = '';
             market_value = li.v;
-            //console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
+            // console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
             callback(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
         }
-        else if(ai&&ai.v.toString() == '1109'||(ai&&bi&&fi&&ei&&ji&&li&&(ai.v.toString().substr(0, 4) == '1108')))
+        else if((ai&&ai.v.toString() == '1109')||(ai&&bi&&fi&&ei&&ji&&li&&(ai.v.toString().substr(0, 4) == '1108')))
         {
             if(ei.v == ' '||ji.v == ' '||li.v == ' '||fi.v == ' '||ei.v == ''||ji.v == ''||li.v =='')
                 continue;
@@ -307,7 +309,7 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
             quantity = ei.v;
             market_price = ji.v;
             market_value = li.v;
-            //console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
+            console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
             callback(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
         }
         else if(ai&&ai.v.toString() == '资产净值')
