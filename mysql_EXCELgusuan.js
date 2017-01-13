@@ -14,7 +14,7 @@ mysql_irm_client.connect();
 
 
 
-var pos_date = "2017-01-10";   //这是执行时间 与文件的时间相吻合的话 更新fof的asset_official 否则就不用更新
+var pos_date = "2017-01-12";   //这是执行时间 与文件的时间相吻合的话 更新fof的asset_official 否则就不用更新
 //所有程序的输入文件都需要是单文件 不然容易出现异步的bug
 //该程序有疑问 未处理 !!!!!!!!
 var pickdata = function (filename) {

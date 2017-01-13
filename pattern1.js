@@ -168,7 +168,7 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
         //股指期货  商品期货 债券期货 期权 这四种类型全在里面
         {
             // //console.log(ai.v, '!!!'+ei.v+'!!!', typeof(fi.v));
-            if(ei.v == ' '||ji.v == ' '||li.v == ' '||fi.v == ' '||ei.v == ''||ji.v == ''||li.v =='')
+            if(ei.v == ' '||ji.v == ' '||li.v == ' '||fi.v == ' '||ei.v == ''||ji.v == ''||li.v ==''||fi.v == '')
                 continue;
             if((ai.v.toString().substr(0,7) == '3102.01')||(ai.v.toString().substr(0,7) == '3102.03')) //||(ai.v.toString().substr(0,7) == '3102.02')
             {   //股指期货
@@ -309,7 +309,7 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
             quantity = ei.v;
             market_price = ji.v;
             market_value = li.v;
-            console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
+            // console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
             callback(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
         }
         else if(ai&&ai.v.toString() == '资产净值')

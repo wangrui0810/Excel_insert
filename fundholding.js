@@ -6,7 +6,7 @@ var getPattern2 = require('./pattern2.js');
 var getPattern3 = require('./pattern3.js');
 
 var mysql = require('mysql');
-var mysql_irm_client = mysql.createConnection(config.test_dbPath);
+var mysql_irm_client = mysql.createConnection(config.dbPath);
 mysql_irm_client.connect(function(err) {
   if (err) {
     console.error('error connecting: ' + err.stack);
@@ -68,7 +68,7 @@ var sqlAction = function (filename, account_id) {
                                     console.log(err);
                                     throw err;
                                 }  
-                                // console.log("插入Fundholding" +a, b, c);
+                                console.log("插入Fundholding" +a, b, c);
                                 // console.log(result);
                             }); 
 
@@ -80,7 +80,7 @@ var sqlAction = function (filename, account_id) {
                                     console.log(err);
                                     throw err;
                                 }  
-                                // console.log("插入Fundholding" +a, b, c);
+                                console.log("插入Fundholding" +a, b, c);
                                 // console.log(result);
                             }); 
             }
@@ -140,7 +140,7 @@ var sqlAction = function (filename, account_id) {
                                     console.log(err);
                                     throw err;
                                 }  
-                                // console.log("插入Nvdata" +a, b);
+                                console.log("插入Nvdata" +a, b);
                                 // console.log(result);
                             }); 
             }
