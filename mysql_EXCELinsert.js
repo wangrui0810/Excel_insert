@@ -3,11 +3,20 @@ var output = require('debug')('app:log');
 var path = require('path');
 var config = require('./config.json');
 var mysql = require('mysql');
+var util = require('util');
+var fs = require("fs");
 //所有程序的输入文件都需要是单文件 不然容易出现异步的bug
 var mysql_irm_client = mysql.createConnection(config.dbPath);
 mysql_irm_client.connect();
+var sql = '';
+var now = new Date();
+var log_name = "./"+ (now.getMonth()+1)+"."+now.getDate()+".log";
 
-
+var handle = function(str)
+{
+    str = "\'"+ str + "\'";
+    return str;
+}
 //所有程序的输入文件都需要是单文件 不然容易出现异步的bug
 //此程序是对 有每日净值的excel进行更新的 也就是九尾一号 金星三号等
 var pickdata = function (filename) {
@@ -38,6 +47,8 @@ var pickName = function (filename) {
         name = "xingyun1hao";
     else if(baseName.indexOf("星优一号") >= 0)
         name = "Xingyou1hao";
+    else if(baseName.indexOf("众星1号") >= 0)
+        name = "Zhongxing1hao";
     return name;
 };
 var readWorkbook_ = function (filename) {
@@ -90,6 +101,7 @@ var acct_name = {
     '11090101S81686':'xingyunJial',
     '11090101SK3893':'xingyunLightH',
     '1108.02.01.SN0784 OTC':'LianhaiDuich',
+    '1108.02.01.SR3252 OTC':'LianhaiJingx',
     '1108.02.01.1XYXC1 OTC':'Xingchen1hao',
     '1108.02.01.SN2682 OTC':'Xingyou1hao',
     '1108.02.01.SM9462 OTC':'Xingying8hao',
@@ -100,7 +112,9 @@ var acct_name = {
     '1108.02.01.SH0267 OTC':'ZhongxingSon2',
     '1108.02.01.SH0269 OTC':'ZhongxingSon4',
     '1108.02.01.SH0271 OTC':'ZhongxingSon6',
-    '1108.02.01.SH0273 OTC':'ZhongxingSon7'
+    '1108.02.01.SH0273 OTC':'ZhongxingSon7',
+    '1108.02.01.SH0265 OTC':'ZhongxingSon1',
+    '1108.02.01.SH0268 OTC':'ZhongxingSon3'
 };
 
 
@@ -164,7 +178,7 @@ var sqlActionInner = function (workbook, filename, callback, num) {
         if((ai&&li&&hi&&ei&&ai.v.toString()&&ai.v.toString().substr(0, 11) == '1108.02.01.') || (ai&&ai.v.toString().substr(0, 8) =='11090101'))
         {
             ProductNum++;   //这个数是 估值表中这个 fof产品有多少个子基金  
-            if(fund_of_fund == 'Jiuwei1hao' || fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao'||fund_of_fund == 'Xingyou1hao')
+            if(fund_of_fund == 'Jiuwei1hao' || fund_of_fund == 'Jinxing3hao'||fund_of_fund == 'Xinghai3hao'||fund_of_fund == 'Xingyou1hao'||fund_of_fund == 'Zhongxing1hao')
             {
                 var account_id = acct_name[ai.v.toString()];
                 var asset_official = ji.v;
@@ -274,10 +288,10 @@ var sqlActionInner = function (workbook, filename, callback, num) {
             fof_total_equity = li.v;
             continue;
         }
-        else if(ai && ai.v.toString() == '资产合计'){
-            fof_principal = hi.v;
-            continue;
-        }
+        // else if(ai && ai.v.toString() == '资产合计'){
+        //     fof_principal = hi.v;
+        //     continue;
+        // }
         else if(fund_of_fund == 'xingyun1hao'&&ai && ai.v.toString() == '实收资本')
         {
             fof_size = ei.v;
@@ -293,11 +307,11 @@ var sqlActionInner = function (workbook, filename, callback, num) {
             fof_total_equity = hi.v;
             continue;           
         }
-        else if(ai && ai.v.toString() == '资产类合计:')
-        {
-            fof_principal = ei.v;
-            continue;           
-        }
+        // else if(ai && ai.v.toString() == '资产类合计:')
+        // {
+        //     fof_principal = ei.v;
+        //     continue;           
+        // }
         else if(ai && ai.v.toString() == '实收资本')
         {
             fof_size = hi.v;
@@ -319,7 +333,7 @@ var sqlActionInner = function (workbook, filename, callback, num) {
     //fof基金的所有信息 经过for循环之后全都获取到了
     // pos_date, account_id, total_equity, principal, fund_of_fund, asset_official, asset_official, quantity, cost_price, asset_type
 
-    callback(pos_date, fund_of_fund, fof_total_equity, fof_principal, FOF_fund_of_fund, fof_asset_official, fof_asset_official, fof_size, 0, 0); // fof的类型标注为0
+    callback(pos_date, fund_of_fund, fof_total_equity, fof_size, FOF_fund_of_fund, fof_asset_official, fof_asset_official, fof_size, 0, 0); // fof的类型标注为0
     // if(etf_flag == 0)
     //     callback(pos_date, fof_etf, 0, 0, fund_of_fund, 0, 0, 0, 1, 2);
     // if(margin_flag == 0)
@@ -397,6 +411,13 @@ var statistics_database_product_num = function(filename){
                             console.log(err);
                             throw err;
                         }
+                        var sql = util.format("insert into nvdata(trading_day, acct, total_market_value, total_cost_value, asset_us, asset_official, update_time) VALUES(%s, %s, %s, %s,%s, %s, NOW());\n",  handle(a), handle(b), handle(c), handle(d), handle(f), handle(g));
+                        fs.appendFile(log_name,sql,'utf8',function(err){  
+                            if(err)  
+                            {  
+                                console.log(err);  
+                            }  
+                        });  
                     });
                 //version1：如果是fof 那么就只插入到nvdata中 不需要插入fofholding
                 //nothing to do
@@ -419,9 +440,7 @@ var statistics_database_product_num = function(filename){
                                                 throw err;
                                             }
                                         }); 
-
                         }
-
                     }
                     mysql_irm_client.query(selectFoF,
                         [a, e, b],FoF1);
@@ -440,6 +459,13 @@ var statistics_database_product_num = function(filename){
                                 console.log(err);
                                 throw err;
                             }
+                            var sql = util.format("update nvdata set asset_official = %s, total_market_value = %s, total_cost_value = %s, update_time = NOW() where trading_day = %s and acct = %s;\n",  handle(g), handle(c), handle(d), handle(a), handle(b));
+                            fs.appendFile(log_name,sql,'utf8',function(err){  
+                                if(err)  
+                                {  
+                                    console.log(err);  
+                                }  
+                            });    
                         });
                 }
             }

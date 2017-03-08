@@ -5,6 +5,10 @@ var pickdate = function (filename) {
     baseName.substr(baseName.length-14, 10);
     if(baseName.substr(baseName.length-14, 1) == '2')
         return baseName.substr(baseName.length-14, 10);
+    else if(baseName.substr(0, 4) == '蓝石灵通')
+    {
+        return baseName.substr(6,4)+"-"+baseName.substr(11, 2)+"-"+baseName.substr(14,2);
+    }
     else
     {
         var time = baseName.substr(baseName.length-12, 8);
@@ -18,7 +22,9 @@ var pickdate = function (filename) {
 //                 'Kanzhan','Panda1hao',    'LinjieKaili','Bird1hao','JiuweiHaoen','Jiuwei3hao','Xingyou1hao',
 //                 'JiuweiC','JiuweiD','Xiaoqiang','JiuweiE','JiuweiB','Meifeng2A','Xingying4hao',
 //                 'Xingying8hao','Xingying14hao','Xingying15hao','Xingying16hao','Xingying17hao','Tianwangxing', 'Haiwangxing',
-//                 'xingyunYanf','xingyunJial','Xingmei4hao','xingyunLightH', 'Huaxia2hao', 'Xingying2hao', 'Jinxing3hao'];
+//                 'xingyunYanf','xingyunJial','Xingmei4hao','xingyunLightH', 'Huaxia2hao', 'Xingying2hao', 'Jinxing3hao',
+//                    'ZhongxingSon1',  'ZhongxingSon2', 'ZhongxingSon3', 'ZhongxingSon4', 'ZhongxingSon5', 'ZhongxingSon6',
+//                       'ZhongxingSon7', 'ZhongxingSon8', 'ZhongxingSon9', 'LianhaiJingx'];
 
 var getPattern1 = function(workbook, filename, account_id, callback, callback2){
     var pos_date, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value;
@@ -63,19 +69,24 @@ var getPattern1 = function(workbook, filename, account_id, callback, callback2){
             var li = worksheet[index['市值-本币'] + i];
         else 
             var li = worksheet[index['市值'] + i];
-        //海王星的估值表格式有点问题
-        if(account_id == 'Haiwangxing')
-        {
-            li = worksheet['L' + i];
-            hi = worksheet['H' + i];
-        }
+        // //海王星的估值表格式有点问题
+        // if(account_id == 'Haiwangxing')
+        // {
+        //     li = worksheet['L' + i];
+        //     hi = worksheet['H' + i];
+        // }
 
         if(ai&&bi&&hi&&ei&&ji&&li&&fi&&(ai.v.toString().substr(0, 4) == '1102')) //done
         { 
           //pos_date, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value
             if(ei.v == ' '||ji.v == ' '||li.v == ' '||fi.v == ' '||ei.v == ''||ji.v == ''||li.v =='')
                 continue;
-            security_id = ai.v.toString().substr(11, 6);
+            if(ai.v.toString().substr(5, 2) == '65')
+            {
+                security_id = ai.v.toString().substr(12, 4)+'.HK';     
+            }
+            else
+                security_id = ai.v.toString().substr(11, 6);
             security_name = bi.v;
             security_type = 1;
             principal = hi.v;

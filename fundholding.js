@@ -4,6 +4,17 @@ var config = require('./config.json');
 var getPattern1 = require('./pattern1.js');
 var getPattern2 = require('./pattern2.js');
 var getPattern3 = require('./pattern3.js');
+var util = require('util');
+var fs = require("fs");
+
+var handle = function(str)
+{
+    str = "\'"+ str + "\'";
+    return str;
+}
+
+var now = new Date();
+var log_name = "./"+ (now.getMonth()+1)+"."+now.getDate()+".log";
 
 var mysql = require('mysql');
 var mysql_irm_client = mysql.createConnection(config.dbPath);
@@ -30,17 +41,19 @@ var pattern1 = ['HuaxiaRY','XinghaiM','Zhongxing1hao','Zhongxing2hao','Fengjing3
                 'Kanzhan','Panda1hao','LinjieKaili','Bird1hao','JiuweiHaoen','Jiuwei3hao','Xingyou1hao',
                 'JiuweiC','JiuweiD','Xiaoqiang','JiuweiE','JiuweiB','Meifeng2A','Xingying1hao', 'Xingying2hao','Xingying4hao',
                 'Xingying8hao','Xingying14hao','Xingying15hao','Xingying16hao','Xingying17hao','Tianwangxing','Haiwangxing',
-                'xingyunYanf','xingyunJial','Xingmei4hao','xingyunLightH', 'Huaxia2hao','Jinxing3hao', 'LianghuaJingx', 'Youshi6qi'];
+                'xingyunYanf','xingyunJial','Xingmei4hao','xingyunLightH', 'Huaxia2hao','Jinxing3hao', 'LianhaiJingx', 'Youshi6qi',
+                'ZhongxingSon1','ZhongxingSon2', 'ZhongxingSon3', 'ZhongxingSon4', 'ZhongxingSon5', 'ZhongxingSon6',
+                 'ZhongxingSon7', 'ZhongxingSon8', 'ZhongxingSon9'];
 for(var i = 0; i < pattern1.length; ++i)
 {
     flag[pattern1[i]] = 1;
 }
-var pattern2 = ['xingyunCqi','LianhaiDingz', 'Xingying6hao', 'Xingying7hao'];
+var pattern2 = ['xingyunCqi','LianhaiDingz', 'Xingying6hao', 'Xingying7hao', 'LanshiLingt'];
 for(var i = 0; i < pattern2.length; ++i)
 {
     flag[pattern2[i]] = 2;
 }
-var pattern3 = ['XingheM2', 'ShunshiGuoji', 'XingheM1', 'Xinhui1hao'];
+var pattern3 = ['XingheM2', 'ShunshiGuoji', 'XingheM1', 'Xinhui1hao', 'JiaxuanDingz'];
 for(var i = 0; i < pattern3.length; ++i)
 {
     flag[pattern3[i]] = 3;
@@ -84,37 +97,6 @@ var sqlAction = function (filename, account_id) {
                                 // console.log(result);
                             }); 
             }
-            else
-            {
-                // console.log(a, b, c+"这个产品已经在fundholding中");
-                // if (e == 3||e == 4||e == 10||e == 11) {
-                //         mysql_irm_client.query(updateFundholding2,
-                //                 [e, f, j, a, b, c],
-                //                 function(err, result) {
-                //                 // console.log(a, b, c, d, e, f, g, h, i, j+"已经在fundholding2中"); 
-                //                 //console.log("fof表中的子基金（插入）到FoFholding表中", a, b);
-                //                     if(err) {
-                //                         console.log(err);
-                //                         throw err;
-                //                     }
-                //                     // console.log(result);
-                //                 });
-
-                // }
-                // else{
-                //         mysql_irm_client.query(updateFundholding,
-                //                 [e, f, g, h, i, j, a, b, c],
-                //                 function(err, result) {
-                //                 // console.log(a, b, c, d, e, f, g, h, i, j+"已经在fundholding中"); 
-                //                 //console.log("fof表中的子基金（插入）到FoFholding表中", a, b);
-                //                     if(err) {
-                //                         console.log(err);
-                //                         throw err;
-                //                     }
-                //                     // console.log(result);
-                //                 });
-                // }
-            }
         }
         mysql_irm_client.query(selectFund, 
             [a, b, c],
@@ -139,7 +121,15 @@ var sqlAction = function (filename, account_id) {
                                 if(err) {
                                     console.log(err);
                                     throw err;
-                                }  
+                                }
+                                var sql = util.format("insert into nvdata(trading_day, acct, long_value, short_value, margin, total_market_value, total_cost_value,\
+asset_us, asset_official, update_time) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW());\n",  handle(a), handle(b), handle(c), handle(d), handle(e), handle(f), handle(g), handle(h), handle(i));
+                                fs.appendFile(log_name,sql,'utf8',function(err){  
+                                    if(err)  
+                                    {  
+                                        console.log(err);  
+                                    }  
+                                });      
                                 console.log("插入Nvdata" +a, b);
                                 // console.log(result);
                             }); 
@@ -153,6 +143,14 @@ var sqlAction = function (filename, account_id) {
                                 console.log(err);
                                 throw err;
                             }  
+                            var sql = util.format("update nvdata set long_value = %s,short_value = %s,margin = %s,total_market_value = %s,total_cost_value =%s,\
+asset_us = %s, asset_official = %s, update_time = NOW() where trading_day = %s and acct = %s;\n",  handle(c), handle(d), handle(e), handle(f), handle(g), handle(h), handle(i), handle(a), handle(b));
+                            fs.appendFile(log_name,sql,'utf8',function(err){  
+                                if(err)  
+                                {  
+                                    console.log(err);  
+                                }  
+                            });  
                             // console.log("更新Nvdata" +a, b);
                             // console.log(result);
                         }); 

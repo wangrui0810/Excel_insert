@@ -5,6 +5,10 @@ var pickdate = function (filename) {
     baseName.substr(baseName.length-14, 10);
     if(baseName.substr(baseName.length-14, 1) == '2')
         return baseName.substr(baseName.length-14, 10);
+    else if(baseName.substr(0, 4) == '蓝石灵通')
+    {
+        return baseName.substr(6,4)+"-"+baseName.substr(11, 2)+"-"+baseName.substr(14,2);
+    }
     else
     {
         var time = baseName.substr(baseName.length-12, 8);
@@ -242,7 +246,7 @@ var getPattern3 = function(workbook, filename, account_id, callback, callback2){
             // console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
             callback(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
         }
-        else if(bi&&ci&&fi&&ei&&di&&hi&&ii&&bi.v.substr(0, 8)=='11090601')
+        else if(bi&&(bi.v.length == 14)&&bi.v.substr(0, 5)=='11090')
         {  
             security_id = bi.v.substr(8, 6);
             security_name = ci.v;

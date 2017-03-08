@@ -6,15 +6,24 @@ var output = require('debug')('app:log');
 var path = require('path');
 var config = require('./config.json');
 var mysql = require('mysql');
+var util = require('util');
+var fs = require("fs");
+var now = new Date();
+var log_name = "./"+ (now.getMonth()+1)+"."+now.getDate()+".log";
+
+var handle = function(str)
+{
+    str = "\'"+ str + "\'";
+    return str;
+}
+
 //所有程序的输入文件都需要是单文件 不然容易出现异步的bug
 var mysql_irm_client = mysql.createConnection(config.dbPath);
 mysql_irm_client.connect();
 
 
 
-
-
-var pos_date = "2017-01-12";   //这是执行时间 与文件的时间相吻合的话 更新fof的asset_official 否则就不用更新
+var pos_date = "2017-03-07";   //这是执行时间 与文件的时间相吻合的话 更新fof的asset_official 否则就不用更新
 //所有程序的输入文件都需要是单文件 不然容易出现异步的bug
 //该程序有疑问 未处理 !!!!!!!!
 var pickdata = function (filename) {
@@ -95,7 +104,8 @@ var acct_name = {
     '11090101SK3893':'xingyunLightH',
     '1108.02.01.1XM4H1 OTC':'Xingmei4hao',
     '1108.02.01.SK3893 OTC':'xingyunLightH',
-    '1108.02.01.SR3252 OTC':'LianghuaJingx'
+    '1108.02.01.SR3252 OTC':'LianhaiJingx',
+    '1108.02.01.SS0063 OTC':'LianhaiBond'
 };
 
 var isExistFoFholding  = function(a, b, c, d, e, f, g, h, i, j)
@@ -175,6 +185,13 @@ var sqlAction = function (filename) {
                         console.log(err);
                         throw err;
                     }  
+                    var sql = util.format("update nvdata set asset_official = %s, total_market_value = %s, total_cost_value = %s, update_time = NOW() where trading_day = %s and acct = %s;\n",  handle(f), handle(c), handle(d), handle(a), handle(b));
+                    fs.appendFile(log_name,sql,'utf8',function(err){  
+                        if(err)  
+                        {  
+                            console.log(err);  
+                        }  
+                    });    
                     if(result.rowCount == 0)
                     {
                         console.log(file_date,"没有fof数据的，也就是没有估算，无法更新官方净值");
@@ -213,6 +230,13 @@ var sqlAction = function (filename) {
                             console.log(err);
                             throw err;
                         }
+                        var sql = util.format("insert into nvdata(trading_day, acct, total_market_value, total_cost_value, asset_us, update_time) VALUES(%s, %s, %s, %s, %s, NOW());\n",  handle(a), handle(b), handle(c), handle(d), handle(f));
+                        fs.appendFile(log_name,sql,'utf8',function(err){  
+                            if(err)  
+                            {  
+                                console.log(err);  
+                            }  
+                        });
                         console.log("针对fof的函数：插入Nvdata" +a, b);
                     });
             }
@@ -227,6 +251,13 @@ var sqlAction = function (filename) {
                             console.log(err);
                             throw err;
                         }
+                        var sql = util.format("insert into nvdata(trading_day, acct, total_market_value, total_cost_value, asset_us, asset_official, update_time) VALUES(%s, %s, %s, %s, %s, %s, NOW());\n",  handle(a), handle(b), handle(c), handle(d), handle(f), handle(g));
+                        fs.appendFile(log_name,sql,'utf8',function(err){  
+                            if(err)  
+                            {  
+                                console.log(err);  
+                            }  
+                        });
                         console.log("针对fof的函数：插入Nvdata" +a, b);
                     });
             }
@@ -312,6 +343,13 @@ var sqlAction = function (filename) {
                                 console.log(err);
                                 throw err;
                             }
+                            var sql = util.format("insert into nvdata(trading_day, acct, total_market_value, asset_us, asset_official, update_time) VALUES(%s, %s, %s, %s, %s, NOW());\n",  handle(file_date), handle(b), handle(c),handle(f), handle(g));
+                            fs.appendFile(log_name,sql,'utf8',function(err){  
+                                if(err)  
+                                {  
+                                    console.log(err);  
+                                }  
+                            });
                             console.log(file_date, b+"这个净值是新的 没录过 插入nvdata");
                         });
                     //更新对于 fof中的子基金 既要更新principal  又要更新nvdata的净值
@@ -373,7 +411,6 @@ var sqlAction = function (filename) {
         var fof_margin = fund_of_fund+'_margin';
         var fof_others = fund_of_fund+'_others';
         var fof_cash = fund_of_fund+'_cash';
-
         var sum = 0;   //分子总钱数
         //前提:程序建立在 所有的信息都已经更新 用子基金来更新fof
         //1. 还需要将Cash和Fund 也录进去
@@ -448,7 +485,6 @@ var sqlAction = function (filename) {
                 //console.log("line: 303 " + sum , li.v);
                 sum += li.v; //这里是 将所有金钱的总数放到一起
                 fof_Cash += li.v;  //这里是为了将所有的现金放到一起
-
             }
             else if(ai&&ai.v.toString() == '1031')
             {
@@ -492,7 +528,7 @@ var sqlAction = function (filename) {
                 if(pos_date == file_date)
                     insertFunction(pos_date, account_id, 0, fof_Etf, fund_of_fund, 0, 0, 0, 1, 2);
                 // else  
-                //     insertFunction(pos_date, account_id, 0, fof_Etf, fund_of_fund, 0, 0, 0, 1, 2);
+                //  insertFunction(pos_date, account_id, 0, fof_Etf, fund_of_fund, 0, 0, 0, 1, 2);
             }  
             else if(ai && ai.v.toString() == '单位净值'){
                 if(pos_date == file_date)
@@ -508,10 +544,10 @@ var sqlAction = function (filename) {
                 fof_total_equity = li.v;
                 continue;
             }
-            else if(ai && ai.v.toString() == '资产合计'){
-                fof_principal = hi.v;
-                continue;
-            }
+            // else if(ai && ai.v.toString() == '资产合计'){
+            //     fof_principal = hi.v;
+            //     continue;
+            // }
             else if(ai && ai.v.toString() == '实收资本'){
                 fof_size = ei.v;
                 continue;
@@ -529,11 +565,11 @@ var sqlAction = function (filename) {
                 fof_total_equity = li.v;
                 continue;           
             }
-            else if(ai && ai.v.toString() == '资产类合计:')
-            {
-                fof_principal = hi.v;
-                continue;           
-            }
+            // else if(ai && ai.v.toString() == '资产类合计:')
+            // {
+            //     fof_principal = hi.v;
+            //     continue;           
+            // }
             else
             {
                 continue;
@@ -554,7 +590,7 @@ var sqlAction = function (filename) {
         if(pos_date == file_date)
         {
             //更新asset_official
-            updateFunction(pos_date, fund_of_fund, fof_total_equity, fof_principal, fund_of_fund, fof_asset_official, fof_asset_official, fof_size, 0, 1);
+            updateFunction(pos_date, fund_of_fund, fof_total_equity, fof_size, fund_of_fund, fof_asset_official, fof_asset_official, fof_size, 0, 1);
             //把现金 etf 保证金 其他 录进去
             insertFunction(pos_date, fof_cash, 0, fof_Cash, fund_of_fund, 0, 0, 0, 1, 4);
             // if(etf_flag == 0)
@@ -568,8 +604,8 @@ var sqlAction = function (filename) {
         {
             //pos_date, account_id, total_equity, principal, fund_of_fund, asset_official, asset_official, quantity, cost_price, asset_type
             //估算的时候只录入净值
-            console.log(pos_date, fund_of_fund, fof_total_equity, fof_principal, fund_of_fund, asset_us, fof_asset_official, fof_size, 0, 1);
-            insertFunction(pos_date, fund_of_fund, fof_total_equity, fof_principal, fund_of_fund, asset_us, fof_asset_official, fof_size, 0, 1);
+            console.log(pos_date, fund_of_fund, fof_total_equity, fof_size, fund_of_fund, asset_us, fof_asset_official, fof_size, 0, 1);
+            insertFunction(pos_date, fund_of_fund, fof_total_equity, fof_size, fund_of_fund, asset_us, fof_asset_official, fof_size, 0, 1);
 
         }        
     };

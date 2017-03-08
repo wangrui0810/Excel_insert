@@ -5,6 +5,10 @@ var pickdate = function (filename) {
     baseName.substr(baseName.length-14, 10);
     if(baseName.substr(baseName.length-14, 1) == '2')
         return baseName.substr(baseName.length-14, 10);
+    else if(baseName.substr(0, 4) == '蓝石灵通')
+    {
+        return baseName.substr(6,4)+"-"+baseName.substr(11, 2)+"-"+baseName.substr(14,2);
+    }
     else
     {
         var time = baseName.substr(baseName.length-12, 8);
@@ -12,7 +16,7 @@ var pickdate = function (filename) {
     }
 };
 
-// var pattern2 = ['xingyunCqi','LianhaiDingz', 'Xingying6hao', 'Xingying7hao'];
+// var pattern2 = ['xingyunCqi','LianhaiDingz', 'Xingying6hao', 'Xingying7hao', 'LanshiLingt'];
 var getPattern2 = function(workbook, filename, account_id, callback, callback2){ 
     var pos_date, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value;
     var trading_day, acct, Fut_margin;
@@ -202,8 +206,20 @@ var getPattern2 = function(workbook, filename, account_id, callback, callback2){
         }
         else if(ai&&bi&&ci&&hi&&ei&&di&&gi&&(ai.v.substr(0, 4) == '1103'))//done
         //债券  针对ShunshiGuoji产品 里面全是上海的  
+        //银行间短期和中期票据 后面是.IB  
         {
-            security_id = ai.v.substr(8, 6)+'.'+'SH';
+            if(ai.v.substr(4, 2) == '13')
+                security_id = ai.v.substr(8, 6)+'.'+'SH';
+            else if(ai.v.substr(4, 2) == '33')
+                security_id = ai.v.substr(8, 6)+'.'+'SZ';
+            else if(ai.v.substr(4, 1) == '5'||ai.v.substr(4, 1) == '6')
+                security_id = ai.v.substr(8, 6)+'.'+'IB';
+            else
+            {
+                console.log(pos_date,ai.v);
+                console.log("出现了债券的新种类");
+                return;
+            }
             security_name = bi.v;
             security_type = 9;
             principal = ei.v;
@@ -221,7 +237,17 @@ var getPattern2 = function(workbook, filename, account_id, callback, callback2){
         else if(ai&&(ai.v.length == 14)&&(ai.v.substr(0, 6) == '120410'))//undone
         //债券的应收利息
         { 
-            security_id = ai.v.substr(8, 6)+'.'+'SH';
+            if(ai.v.substr(6, 2) == '13')
+                security_id = ai.v.substr(8, 6)+'.'+'SH';
+            else if(ai.v.substr(6, 2) == '33')
+                security_id = ai.v.substr(8, 6)+'.'+'SZ';
+            else if(ai.v.substr(6, 1) == '5'||ai.v.substr(6, 1) == '6')
+                security_id = ai.v.substr(8, 6)+'.'+'IB';
+            else
+            {
+                console.log("出现了债券应收利息的新种类");
+                return;
+            }
             security_name = bi.v;
             security_type = 10;
             principal = ei.v;
@@ -245,7 +271,7 @@ var getPattern2 = function(workbook, filename, account_id, callback, callback2){
             // console.log(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
             callback(pos_date, account_id, security_id, security_name, security_type, principal, cost_price, quantity, market_price, market_value);
         }
-        else if(ai&&bi&&ci&&hi&&ei&&di&&gi&&ai.v.substr(0, 8)=='11090601') //done
+        else if(bi&&(bi.v.length == 14)&&bi.v.substr(0, 5)=='11090')
         {  
             security_id = ai.v.substr(8, 6);
             security_name = bi.v;
